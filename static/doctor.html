@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Doctor Portal</h1>
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <table id="patientsTable" class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Condition</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function fetchPatients() {
+            try {
+                const response = await fetch('/doctor/patients', {
+                    headers: { 'Authorization': localStorage.getItem('token') }
+                });
+                if (response.ok) {
+                    const patients = await response.json();
+                    const tbody = document.querySelector('#patientsTable tbody');
+                    tbody.innerHTML = '';
+                    patients.forEach(patient => {
+                        const row = tbody.insertRow();
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">${patient.name}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${patient.age}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${patient.condition}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button onclick="updatePatient(${JSON.stringify(patient)})" class="text-indigo-600 hover:text-indigo-900">Update</button>
+                            </td>
+                        `;
+                    });
+                } else {
+                    alert('Failed to fetch patients');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while fetching patients');
+            }
+        }
+
+        async function updatePatient(patient) {
+            const newCondition = prompt('Enter new condition:', patient.condition);
+            if (newCondition) {
+                try {
+                    const response = await fetch('/doctor/patient/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': localStorage.getItem('token')
+                        },
+                        body: JSON.stringify({ ...patient, condition: newCondition })
+                    });
+                    if (response.ok) {
+                        alert('Patient updated successfully');
+                        fetchPatients();
+                    } else {
+                        alert('Failed to update patient');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating patient');
+                }
+            }
+        }
+
+        fetchPatients();
+    </script>
+</body>
+</html>
